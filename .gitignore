@@ -1,3 +1,16 @@
-security_audit.csv
-Results/
+# --- SumiLogics Security Filter ---
+
+# 1. Hide the Student Data (Excel)
+Project_Results.xlsx
 *.xlsx
+*.csv
+
+# 2. Hide the Actual Project Files
+Results/
+
+# 3. Hide Python Junk Files
+__pycache__/
+*.pyc
+
+# 4. Hide Security Logs
+security_audit.csv
