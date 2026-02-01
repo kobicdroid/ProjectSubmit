@@ -104,7 +104,7 @@ def save_submission_data(name, serial, s_class, score, uploaded_file):
 # --- CONFIG & PASSWORDS ---
 st.set_page_config(page_title="RSC Portal | Shutdown", page_icon="🎓", layout="wide")
 
-SUPER_ADMIN_KEY = "SUMI"
+SUPER_ADMIN_KEY = "ADMIN2026"
 
 CLASS_PASSWORDS = {
     "JSS 1": "JSS1_ACCESS", "JSS 2": "JSS2_ACCESS", "JSS 3": "JSS3_ACCESS",
@@ -134,7 +134,7 @@ def admin_page():
     st.markdown('<div class="admin-banner"><h1>🛡️ STAFF COMMAND CENTER</h1></div>', unsafe_allow_html=True)
     
     st.sidebar.markdown("### 🔑 Root Authentication")
-    super_key = st.sidebar.text_input("Master Audit Key", type="password", help="Enter secret key SUMI to view logs.")
+    super_key = st.sidebar.text_input("Master Audit Key", type="password", help="Enter secret key to view logs.")
     
     tab1, tab2 = st.tabs(["📊 CLASS RECORDS", "📂 SECURITY AUDIT & TOOLS"])
 
@@ -301,3 +301,4 @@ else:
     upload_page()
 
 st.markdown("<br><hr><center>© 2026 Ruby Springfield College | Developed by <b>Adam Usman (Shutdown)</b></center>", unsafe_allow_html=True)
+
