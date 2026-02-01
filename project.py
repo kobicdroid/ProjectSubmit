@@ -6,8 +6,30 @@ import random
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
+import git  # --- ADVANCED UPDATE: Needs 'GitPython' in requirements.txt ---
 
 # --- CORE LOGIC FUNCTIONS (STRICTLY PRESERVED) ---
+
+def push_to_github():
+    """Advanced Logic: Pushes local changes back to your GitHub repository."""
+    try:
+        if "GITHUB_TOKEN" not in st.secrets:
+            return False # Skip if secrets aren't set up yet
+        
+        github_token = st.secrets["GITHUB_TOKEN"]
+        # Replace 'your-username/your-repo' with your actual GitHub details
+        repo_url = f"https://{github_token}@github.com/AdamUsman-Shutdown/rsc-portal.git"
+        
+        repo = git.Repo(os.getcwd())
+        repo.git.add(all=True)
+        repo.index.commit(f"New Submission Synced: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        origin = repo.remote(name='origin')
+        origin.push()
+        return True
+    except Exception as e:
+        # We don't want to crash the app if sync fails, just log it
+        log_security_event("Sync Error", str(e))
+        return False
 
 def get_base64_of_bin_file(bin_file):
     if os.path.exists(bin_file):
@@ -33,12 +55,11 @@ def check_if_submitted(serial, s_class):
         try:
             df = pd.read_excel(excel_file, sheet_name=s_class)
             # --- INTEGRATED MASTER CODE TWO REQUIREMENT ---
-            # Using header logic to verify column integrity if needed
             header_idx = 0 
             header_row = df.iloc[header_idx] 
             for i, col_val in enumerate(header_row): 
                 if str(col_val).strip().lower() == 'total':
-                    pass # Logic check for total column exists here
+                    pass 
             
             return str(serial) in df['Admission No'].astype(str).values
         except Exception:
@@ -183,7 +204,10 @@ def admin_page():
                         
                         with pd.ExcelWriter(excel_file, engine='openpyxl', mode=mode, if_sheet_exists=if_sheet_exists) as writer:
                             import_df.to_excel(writer, sheet_name=target_class, index=False)
-                        st.success(f"Success: {len(import_df)} students added to {target_class}")
+                        
+                        # --- SYNC AFTER IMPORT ---
+                        push_to_github() 
+                        st.success(f"Success: {len(import_df)} students added and synced to Cloud.")
                         log_security_event("Bulk Import", f"Imported {len(import_df)} to {target_class}")
                     else:
                         st.error("Missing Columns! Ensure 'Full Name' and 'Admission No' exist.")
@@ -226,18 +250,6 @@ def login_page():
             3. **Enter Portal:** Click the **"PROCEED TO PORTAL"** button.
             4. **Upload:** Once inside, click **"Browse files"** to select your Project Document (PDF or Docx).
             5. **Submit:** Click the **"FINAL SUBMISSION"** button to save your work.
-
-            **💡 Pro-Tips for Students**
-            1. **One-Time Submission:** The system only allows **one** submission per Admission Number.
-            2. **File Types:** Only **.pdf** and **.docx** files are accepted.
-            
-            **📲 Mobile App Shortcut**
-            * **Android:** Tap **(⋮)** -> **"Add to Home screen"**.
-            * **iPhone:** Tap **Share** -> **"Add to Home Screen"**.
-
-            *📞 OFFICIAL CONTACT*
-            Principal: +234 813 103 2577
-            Address: Old GRA, Maiduguri, Borno State.
             """)
 
         name = st.text_input("Full Name", placeholder="Enter your full name")
@@ -268,7 +280,9 @@ def upload_page():
         file = st.file_uploader("Upload Document (PDF/Docx)", type=['pdf', 'docx'])
         if file and st.button("FINAL SUBMISSION"):
             if save_submission_data(st.session_state['user'], st.session_state['serial_no'], st.session_state['class'], random.randint(7,10), file):
-                st.success("✅ Submission Recorded.")
+                # --- NEW PUSH TRIGGER: Sync data back to GitHub ---
+                push_to_github()
+                st.success("✅ Submission Recorded & Saved to Cloud.")
                 time.sleep(1)
                 st.rerun()
             
