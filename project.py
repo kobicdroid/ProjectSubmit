@@ -17,8 +17,8 @@ def push_to_github():
             return False # Skip if secrets aren't set up yet
         
         github_token = st.secrets["GITHUB_TOKEN"]
-        # Replace 'your-username/your-repo' with your actual GitHub details
-        repo_url = f"https://{github_token}@github.com/AdamUsman-Shutdown/rsc-portal.git"
+        # --- UPDATED REPO URL FOR KOBICDROID ---
+        repo_url = f"https://{github_token}@github.com/kobicdroid/ProjectSubmit.git"
         
         repo = git.Repo(os.getcwd())
         repo.git.add(all=True)
@@ -280,7 +280,7 @@ def upload_page():
         file = st.file_uploader("Upload Document (PDF/Docx)", type=['pdf', 'docx'])
         if file and st.button("FINAL SUBMISSION"):
             if save_submission_data(st.session_state['user'], st.session_state['serial_no'], st.session_state['class'], random.randint(7,10), file):
-                # --- NEW PUSH TRIGGER: Sync data back to GitHub ---
+                # --- SYNC TRIGGER ---
                 push_to_github()
                 st.success("✅ Submission Recorded & Saved to Cloud.")
                 time.sleep(1)
