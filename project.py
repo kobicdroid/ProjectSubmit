@@ -134,7 +134,7 @@ def admin_page():
     st.markdown('<div class="admin-banner"><h1>🛡️ STAFF COMMAND CENTER</h1></div>', unsafe_allow_html=True)
     
     st.sidebar.markdown("### 🔑 Root Authentication")
-    super_key = st.sidebar.text_input("Master Audit Key", type="password", help="Enter secret key to view logs.")
+    super_key = st.sidebar.text_input("Master Audit Key", help="Enter secret key to view logs.")
     
     tab1, tab2 = st.tabs(["📊 CLASS RECORDS", "📂 SECURITY AUDIT & TOOLS"])
 
@@ -301,4 +301,5 @@ else:
     upload_page()
 
 st.markdown("<br><hr><center>© 2026 Ruby Springfield College | Developed by <b>Adam Usman (Shutdown)</b></center>", unsafe_allow_html=True)
+
 
