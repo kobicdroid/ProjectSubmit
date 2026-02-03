@@ -111,8 +111,8 @@ st.set_page_config(page_title="RSC Portal | Shutdown", page_icon="🎓", layout=
 SUPER_ADMIN_KEY = "SUMI"
 
 CLASS_PASSWORDS = {
-    "JSS 1": "JSS1_ACCESS", "JSS 2": "JSS2_ACCESS", "JSS 3": "JSS3_ACCESS",
-    "SS 1": "SS1_ACCESS", "SS 2": "SS2_ACCESS", "SS 3": "SS3_ACCESS"
+    "JSS 1": "JSS1 ACCESS", "JSS 2": "JSS2 ACCESS", "JSS 3": "JSS3 ACCESS",
+    "SS 1": "SS1 ACCESS", "SS 2": "SS2 ACCESS", "SS 3": "SS3 ACCESS"
 }
 
 # --- STYLING ---
@@ -235,7 +235,7 @@ def admin_page():
                 with open("Project_Results.xlsx", "rb") as f:
                     st.download_button("💾 Download Full Excel Database", f, file_name="RSC_Master_Results.xlsx")
         else:
-            st.warning("🔒 Restricted: Enter the Master Audit Key (SUMI) to view tools.")
+            st.warning("🔒 Restricted: Enter the Master Audit Key to view tools.")
 
     if st.sidebar.button("🚪 Exit Admin Mode"):
         st.session_state['admin_mode'] = False
@@ -295,3 +295,4 @@ else:
     upload_page()
 
 st.markdown("<br><hr><center>© 2026 Ruby Springfield College | Developed by <b>Adam Usman (Shutdown)</b></center>", unsafe_allow_html=True)
+
