@@ -245,7 +245,7 @@ def login_page():
         with st.expander("🛡️ RubySpringfield College: Project Submission Guide"):
             st.markdown("""
             **Official Step-by-Step Portal Access Guide**
-            1. **Visit:** https://rubyspringfield-college.streamlit.app/
+            1. **Visit:** https://rubyspringfield-college-project-submit.streamlit.app/
             2. **Login:** Enter your Full Name, Admission Number, and select your Class arm.
             3. **Enter Portal:** Click the **"PROCEED TO PORTAL"** button.
             4. **Upload:** Once inside, click **"Browse files"** to select your Project Document (PDF or Docx).
@@ -301,6 +301,7 @@ else:
     upload_page()
 
 st.markdown("<br><hr><center>© 2026 Ruby Springfield College | Developed by <b>Adam Usman (Shutdown)</b></center>", unsafe_allow_html=True)
+
 
 
 
