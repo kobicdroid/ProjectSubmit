@@ -128,13 +128,12 @@ st.markdown("""
     <div class="watermark">powered by SumiLogics</div>
     """, unsafe_allow_html=True)
 
-# --- ADMIN PAGE WITH LIVE PREVIEW & SAFETY SYNC ---
+# --- FIXED ADMIN PAGE BY SHUTDOWN ---
 
 def admin_page():
     st.markdown('<div class="admin-banner"><h1>🛡️ STAFF COMMAND CENTER</h1></div>', unsafe_allow_html=True)
     
     st.sidebar.markdown("### 🔑 Root Authentication")
-    # Using the master key 'SUMI' as a reminder for you
     super_key = st.sidebar.text_input("Master Audit Key", type="password", help="Enter secret key SUMI to view logs.")
     
     tab1, tab2 = st.tabs(["📊 CLASS RECORDS", "📂 SECURITY AUDIT & TOOLS"])
@@ -164,47 +163,50 @@ def admin_page():
                 if tabs:
                     sel_tab = st.radio("Sections", tabs, horizontal=True)
                     df = pd.read_excel(excel_file, sheet_name=sel_tab)
+                    
+                    # --- SHUTDOWN FIX: CLEAN HEADERS ---
+                    # This removes hidden spaces like "Full Name " and makes it "Full Name"
+                    df.columns = [str(c).strip() for c in df.columns]
+                    
                     st.dataframe(df, use_container_width=True)
                     
                     st.write("---")
                     st.subheader("👁️ Project Live Preview")
                     
-                    # --- SHUTDOWN UPDATE: KEYERROR SAFETY CHECK ---
-                    if 'Full Name' in df.columns:
-                        student_list = df['Full Name'].tolist()
+                    # Search for the name column regardless of case
+                    name_col = next((c for c in df.columns if c.lower() == 'full name'), None)
+                    adm_col = next((c for c in df.columns if c.lower() == 'admission no'), None)
+
+                    if name_col and adm_col:
+                        student_list = df[name_col].dropna().unique().tolist()
                         selected_student = st.selectbox("Select Student to Preview Project", options=student_list)
                         
                         if selected_student:
-                            # Filter the row for the selected student
-                            student_rows = df[df['Full Name'] == selected_student]
+                            student_data = df[df[name_col] == selected_student].iloc[0]
+                            s_name = str(student_data[name_col]).replace(' ', '_')
+                            s_adm = str(student_data[adm_col])
                             
-                            if not student_rows.empty:
-                                student_data = student_rows.iloc[0]
-                                s_name = str(student_data['Full Name']).replace(' ', '_')
-                                s_adm = str(student_data['Admission No'])
+                            # Path logic for preview
+                            search_path = Path("Results") / sel_tab
+                            found_files = list(search_path.glob(f"{s_name}_{s_adm}.*"))
+                            
+                            if found_files:
+                                file_path = found_files[0]
+                                file_ext = file_path.suffix.lower()
                                 
-                                # Locate the file in the Results folder
-                                search_path = Path("Results") / sel_tab
-                                found_files = list(search_path.glob(f"{s_name}_{s_adm}.*"))
-                                
-                                if found_files:
-                                    file_path = found_files[0]
-                                    file_ext = file_path.suffix.lower()
-                                    
-                                    if file_ext == ".pdf":
-                                        with open(file_path, "rb") as f:
-                                            base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-                                        # Embed PDF in iframe
-                                        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
-                                        st.markdown(pdf_display, unsafe_allow_html=True)
-                                    elif file_ext == ".docx":
-                                        st.info("📝 Microsoft Word files cannot be previewed directly. Please use the download button below.")
-                                        with open(file_path, "rb") as f:
-                                            st.download_button(f"📥 Download {selected_student}'s Project", f, file_name=file_path.name)
-                                else:
-                                    st.warning("File not found in storage. It may not have synced from the cloud yet.")
+                                if file_ext == ".pdf":
+                                    with open(file_path, "rb") as f:
+                                        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+                                    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
+                                    st.markdown(pdf_display, unsafe_allow_html=True)
+                                elif file_ext == ".docx":
+                                    st.info("📝 Word files cannot be previewed. Download below.")
+                                    with open(file_path, "rb") as f:
+                                        st.download_button(f"📥 Download {selected_student}'s Project", f, file_name=file_path.name)
+                            else:
+                                st.warning("File not found in storage. Has it been uploaded?")
                     else:
-                        st.error("❌ Column 'Full Name' not found in this sheet. Please check your Excel headers.")
+                        st.error(f"❌ Headers missing in sheet '{sel_tab}'. Ensure 'Full Name' and 'Admission No' exist.")
 
                     st.write("---")
                     st.download_button(f"📥 Export {sel_tab} CSV", df.to_csv(index=False), file_name=f"{sel_tab}.csv")
@@ -343,6 +345,7 @@ else:
     upload_page()
 
 st.markdown("<br><hr><center>© 2026 Ruby Springfield College | Developed by <b>Adam Usman (Shutdown)</b></center>", unsafe_allow_html=True)
+
 
 
 
