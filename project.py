@@ -128,12 +128,13 @@ st.markdown("""
     <div class="watermark">powered by SumiLogics</div>
     """, unsafe_allow_html=True)
 
-# --- UPDATED ADMIN PAGE WITH PREVIEWER ---
+# --- ADMIN PAGE WITH LIVE PREVIEW & SAFETY SYNC ---
 
 def admin_page():
     st.markdown('<div class="admin-banner"><h1>🛡️ STAFF COMMAND CENTER</h1></div>', unsafe_allow_html=True)
     
     st.sidebar.markdown("### 🔑 Root Authentication")
+    # Using the master key 'SUMI' as a reminder for you
     super_key = st.sidebar.text_input("Master Audit Key", type="password", help="Enter secret key SUMI to view logs.")
     
     tab1, tab2 = st.tabs(["📊 CLASS RECORDS", "📂 SECURITY AUDIT & TOOLS"])
@@ -168,34 +169,42 @@ def admin_page():
                     st.write("---")
                     st.subheader("👁️ Project Live Preview")
                     
-                    # File Selection for Preview
-                    student_list = df['Full Name'].tolist()
-                    selected_student = st.selectbox("Select Student to Preview Project", options=student_list)
-                    
-                    if selected_student:
-                        student_data = df[df['Full Name'] == selected_student].iloc[0]
-                        s_name = student_data['Full Name'].replace(' ', '_')
-                        s_adm = student_data['Admission No']
+                    # --- SHUTDOWN UPDATE: KEYERROR SAFETY CHECK ---
+                    if 'Full Name' in df.columns:
+                        student_list = df['Full Name'].tolist()
+                        selected_student = st.selectbox("Select Student to Preview Project", options=student_list)
                         
-                        # Locate the file in the Results folder
-                        search_path = Path("Results") / sel_tab
-                        found_files = list(search_path.glob(f"{s_name}_{s_adm}.*"))
-                        
-                        if found_files:
-                            file_path = found_files[0]
-                            file_ext = file_path.suffix.lower()
+                        if selected_student:
+                            # Filter the row for the selected student
+                            student_rows = df[df['Full Name'] == selected_student]
                             
-                            if file_ext == ".pdf":
-                                with open(file_path, "rb") as f:
-                                    base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-                                pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
-                                st.markdown(pdf_display, unsafe_allow_html=True)
-                            elif file_ext == ".docx":
-                                st.info("📝 Microsoft Word files cannot be previewed directly in the browser.")
-                                with open(file_path, "rb") as f:
-                                    st.download_button(f"📥 Download {selected_student}'s Project", f, file_name=file_path.name)
-                        else:
-                            st.warning("File not found in storage. It may not have synced yet.")
+                            if not student_rows.empty:
+                                student_data = student_rows.iloc[0]
+                                s_name = str(student_data['Full Name']).replace(' ', '_')
+                                s_adm = str(student_data['Admission No'])
+                                
+                                # Locate the file in the Results folder
+                                search_path = Path("Results") / sel_tab
+                                found_files = list(search_path.glob(f"{s_name}_{s_adm}.*"))
+                                
+                                if found_files:
+                                    file_path = found_files[0]
+                                    file_ext = file_path.suffix.lower()
+                                    
+                                    if file_ext == ".pdf":
+                                        with open(file_path, "rb") as f:
+                                            base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+                                        # Embed PDF in iframe
+                                        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
+                                        st.markdown(pdf_display, unsafe_allow_html=True)
+                                    elif file_ext == ".docx":
+                                        st.info("📝 Microsoft Word files cannot be previewed directly. Please use the download button below.")
+                                        with open(file_path, "rb") as f:
+                                            st.download_button(f"📥 Download {selected_student}'s Project", f, file_name=file_path.name)
+                                else:
+                                    st.warning("File not found in storage. It may not have synced from the cloud yet.")
+                    else:
+                        st.error("❌ Column 'Full Name' not found in this sheet. Please check your Excel headers.")
 
                     st.write("---")
                     st.download_button(f"📥 Export {sel_tab} CSV", df.to_csv(index=False), file_name=f"{sel_tab}.csv")
@@ -256,12 +265,11 @@ def admin_page():
                 with open("Project_Results.xlsx", "rb") as f:
                     st.download_button("💾 Download Full Excel Database", f, file_name="RSC_Master_Results.xlsx")
         else:
-            st.warning("🔒 Restricted: Enter the Master Audit Key to view tools.")
+            st.warning("🔒 Restricted: Enter the Master Audit Key (SUMI) to view tools.")
 
     if st.sidebar.button("🚪 Exit Admin Mode"):
         st.session_state['admin_mode'] = False
         st.rerun()
-
 # --- STUDENT PAGES ---
 
 def login_page():
@@ -335,6 +343,7 @@ else:
     upload_page()
 
 st.markdown("<br><hr><center>© 2026 Ruby Springfield College | Developed by <b>Adam Usman (Shutdown)</b></center>", unsafe_allow_html=True)
+
 
 
 
