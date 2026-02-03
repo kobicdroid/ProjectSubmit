@@ -21,15 +21,12 @@ def push_to_github():
         repo_url = f"https://{github_token}@github.com/kobicdroid/ProjectSubmit.git"
         
         if not os.path.exists(".git"):
-            # Initialize repo if it doesn't exist (Safety for Cloud)
             repo = git.Repo.init(os.getcwd())
         else:
             repo = git.Repo(os.getcwd())
 
         repo.git.add(all=True)
         repo.index.commit(f"New Submission Synced: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        
-        # Force push to ensure Cloud doesn't block the update
         origin = repo.remote(name='origin')
         origin.push()
         return True
@@ -67,7 +64,7 @@ def check_if_submitted(serial, s_class):
                 if str(col_val).strip().lower() == 'total':
                     pass 
             
-            # Clean column names to prevent KeyError
+            # CLEANING HEADERS TO PREVENT KEYERROR
             df.columns = [str(c).strip() for c in df.columns]
             return str(serial) in df['Admission No'].astype(str).values
         except Exception:
@@ -107,9 +104,8 @@ def save_submission_data(name, serial, s_class, score, uploaded_file):
         with open(final_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
 
-        # 3. CRITICAL: Aggressive Sync to GitHub
+        # 3. AGGRESSIVE SYNC
         push_to_github()
-        
         return True
     except PermissionError:
         st.error("❌ Access Denied: Please close 'Project_Results.xlsx' and try again!")
@@ -117,7 +113,7 @@ def save_submission_data(name, serial, s_class, score, uploaded_file):
 
 # --- CONFIG & PASSWORDS ---
 st.set_page_config(page_title="RSC Portal | Shutdown", page_icon="🎓", layout="wide")
-SUPER_ADMIN_KEY = "SUMI" # Updated to your preferred key
+SUPER_ADMIN_KEY = "SUMI"
 
 CLASS_PASSWORDS = {
     "JSS 1": "JSS1_ACCESS", "JSS 2": "JSS2_ACCESS", "JSS 3": "JSS3_ACCESS",
@@ -141,11 +137,9 @@ st.markdown("""
     <div class="watermark">powered by SumiLogics</div>
     """, unsafe_allow_html=True)
 
-# --- FIXED ADMIN PAGE BY SHUTDOWN ---
-
+# --- ADMIN PAGE ---
 def admin_page():
     st.markdown('<div class="admin-banner"><h1>🛡️ STAFF COMMAND CENTER</h1></div>', unsafe_allow_html=True)
-    
     st.sidebar.markdown("### 🔑 Root Authentication")
     super_key = st.sidebar.text_input("Master Audit Key", type="password", help="Enter secret key SUMI to view logs.")
     
@@ -177,43 +171,39 @@ def admin_page():
                     sel_tab = st.radio("Sections", tabs, horizontal=True)
                     df = pd.read_excel(excel_file, sheet_name=sel_tab)
                     
-                    # --- SHUTDOWN FIX: CLEAN HEADERS ---
+                    # CLEAN HEADERS FOR PREVIEW
                     df.columns = [str(c).strip() for c in df.columns]
                     st.dataframe(df, use_container_width=True)
                     
                     st.write("---")
                     st.subheader("👁️ Project Live Preview")
                     
-                    # Find columns regardless of casing
                     name_col = next((c for c in df.columns if c.lower() == 'full name'), None)
                     adm_col = next((c for c in df.columns if c.lower() == 'admission no'), None)
 
                     if name_col and adm_col:
                         student_list = df[name_col].dropna().unique().tolist()
-                        selected_student = st.selectbox("Select Student to Preview Project", options=student_list)
-                        
+                        selected_student = st.selectbox("Select Student to Preview", options=student_list)
                         if selected_student:
                             student_data = df[df[name_col] == selected_student].iloc[0]
                             s_name = str(student_data[name_col]).replace(' ', '_')
                             s_adm = str(student_data[adm_col])
-                            
                             search_path = Path("Results") / sel_tab
-                            found_files = list(search_path.glob(f"{s_name}_{s_adm}.*"))
-                            
-                            if found_files:
-                                file_path = found_files[0]
+                            found = list(search_path.glob(f"{s_name}_{s_adm}.*"))
+                            if found:
+                                file_path = found[0]
                                 if file_path.suffix.lower() == ".pdf":
                                     with open(file_path, "rb") as f:
                                         base64_pdf = base64.b64encode(f.read()).decode('utf-8')
                                     st.markdown(f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600"></iframe>', unsafe_allow_html=True)
                                 else:
-                                    st.info("Word file. Please download to view.")
+                                    st.info("Download to view Word file.")
                                     with open(file_path, "rb") as f:
                                         st.download_button(f"📥 Download Project", f, file_name=file_path.name)
                             else:
-                                st.warning("File not found in storage folder.")
+                                st.warning("File not found.")
                     else:
-                        st.error("❌ 'Full Name' column not found.")
+                        st.error("Header Error: Full Name not found.")
 
                     st.write("---")
                     st.download_button(f"📥 Export CSV", df.to_csv(index=False), file_name=f"{sel_tab}.csv")
@@ -227,31 +217,52 @@ def admin_page():
             
             st.write("---")
             st.subheader("📤 Bulk Student Import")
-            # (Import logic preserved)
             import_classes = ([f"JSS 1{c}" for c in "ABCDEFG"] + [f"JSS 2{c}" for c in "ABCDEF"] + [f"JSS 3{c}" for c in "ABCDEF"] + [f"SS 1{c}" for c in "ABCDEF"] + [f"SS 2{c}" for c in "ABCDEF"] + [f"SS 3{c}" for c in "ABC"])
-            target_class = st.selectbox("Target Class", options=import_classes)
-            import_file = st.file_uploader("Upload CSV", type=['csv'])
+            target_class = st.selectbox("Select Target Class", options=import_classes)
+            import_file = st.file_uploader("Upload Completed List (CSV)", type=['csv'])
             if import_file and st.button("EXECUTE IMPORT"):
-                # (Standard import code here)
-                push_to_github()
-                st.success("Students imported and synced.")
+                try:
+                    import_df = pd.read_csv(import_file)
+                    if "Full Name" in import_df.columns and "Admission No" in import_df.columns:
+                        excel_file = "Project_Results.xlsx"
+                        import_df["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        import_df["AI Score"] = "Pending"
+                        mode = 'a' if os.path.exists(excel_file) else 'w'
+                        with pd.ExcelWriter(excel_file, engine='openpyxl', mode=mode, if_sheet_exists='overlay') as writer:
+                            import_df.to_excel(writer, sheet_name=target_class, index=False)
+                        push_to_github() 
+                        st.success(f"Imported and synced {len(import_df)} students.")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+            st.write("---")
+            st.subheader("📥 Master Sheet Download")
+            if os.path.exists("Project_Results.xlsx"):
+                with open("Project_Results.xlsx", "rb") as f:
+                    st.download_button("💾 Download Full Excel Database", f, file_name="RSC_Master_Results.xlsx")
+        else:
+            st.warning("🔒 Restricted: Enter the Master Audit Key (SUMI) to view tools.")
 
     if st.sidebar.button("🚪 Exit Admin Mode"):
         st.session_state['admin_mode'] = False
         st.rerun()
 
-# --- STUDENT PAGES (PRESERVED) ---
+# --- STUDENT PAGES ---
 def login_page():
     if st.sidebar.button("🔒 Staff Access"):
         st.session_state['admin_mode'] = True
         st.rerun()
     st.markdown("<h1 style='text-align: center; color: #2e7d32;'>RUBY SPRINGFIELD COLLEGE</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; margin-top: -15px;'><i>A Citadel of Supreme Excellence</i></p>", unsafe_allow_html=True)
     _, col2, _ = st.columns([1, 2, 1])
     with col2:
-        name = st.text_input("Full Name")
-        adm = st.text_input("Admission Number")
+        st.write("---")
+        with st.expander("🛡️ Submission Guide"):
+            st.markdown("1. Login 2. Upload PDF/Docx 3. Click Final Submission.")
+        name = st.text_input("Full Name", placeholder="Enter your full name")
+        adm = st.text_input("Admission Number", placeholder="e.g. class number")
         classes = ([f"JSS 1{c}" for c in "ABCDEFG"] + [f"JSS 2{c}" for c in "ABCDEF"] + [f"JSS 3{c}" for c in "ABCDEF"] + [f"SS 1{c}" for c in "ABCDEF"] + [f"SS 2{c}" for c in "ABCDEF"] + [f"SS 3{c}" for c in "ABC"])
-        sel_class = st.selectbox("Class", options=classes, index=None)
+        sel_class = st.selectbox("Class", options=classes, index=None, placeholder="Choose class...")
         if st.button("PROCEED TO PORTAL"):
             if name and adm and sel_class:
                 st.session_state['logged_in'] = True
@@ -263,10 +274,11 @@ def upload_page():
     if check_if_submitted(st.session_state['serial_no'], st.session_state['class']):
         st.warning("⚠️ Already submitted.")
     else:
-        file = st.file_uploader("Upload Project", type=['pdf', 'docx'])
+        st.subheader("Submit Your Project")
+        file = st.file_uploader("Upload Document (PDF/Docx)", type=['pdf', 'docx'])
         if file and st.button("FINAL SUBMISSION"):
             if save_submission_data(st.session_state['user'], st.session_state['serial_no'], st.session_state['class'], random.randint(7,10), file):
-                st.success("✅ Recorded and Synced.")
+                st.success("✅ Submission Recorded & Saved to Cloud.")
                 time.sleep(1); st.rerun()
     if st.sidebar.button("Logout"):
         st.session_state.clear(); st.rerun()
