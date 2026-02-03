@@ -17,7 +17,6 @@ def push_to_github():
             return False 
         
         github_token = st.secrets["GITHUB_TOKEN"]
-        # --- UPDATED REPO URL FOR KOBICDROID ---
         repo_url = f"https://{github_token}@github.com/kobicdroid/ProjectSubmit.git"
         
         if not os.path.exists(".git"):
@@ -64,7 +63,6 @@ def check_if_submitted(serial, s_class):
                 if str(col_val).strip().lower() == 'total':
                     pass 
             
-            # CLEANING HEADERS TO PREVENT KEYERROR
             df.columns = [str(c).strip() for c in df.columns]
             return str(serial) in df['Admission No'].astype(str).values
         except Exception:
@@ -81,7 +79,6 @@ def save_submission_data(name, serial, s_class, score, uploaded_file):
     })
 
     try:
-        # 1. Save to Excel
         if os.path.exists(excel_file):
             with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
                 try:
@@ -95,7 +92,6 @@ def save_submission_data(name, serial, s_class, score, uploaded_file):
 
         log_security_event("Student Submission", f"{name} ({serial}) in {s_class}")
         
-        # 2. Save Physical File
         save_folder = Path("Results") / s_class
         save_folder.mkdir(parents=True, exist_ok=True)
         file_ext = uploaded_file.name.split('.')[-1]
@@ -104,7 +100,6 @@ def save_submission_data(name, serial, s_class, score, uploaded_file):
         with open(final_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
 
-        # 3. AGGRESSIVE SYNC
         push_to_github()
         return True
     except PermissionError:
@@ -170,8 +165,6 @@ def admin_page():
                 if tabs:
                     sel_tab = st.radio("Sections", tabs, horizontal=True)
                     df = pd.read_excel(excel_file, sheet_name=sel_tab)
-                    
-                    # CLEAN HEADERS FOR PREVIEW
                     df.columns = [str(c).strip() for c in df.columns]
                     st.dataframe(df, use_container_width=True)
                     
@@ -192,18 +185,19 @@ def admin_page():
                             found = list(search_path.glob(f"{s_name}_{s_adm}.*"))
                             if found:
                                 file_path = found[0]
+                                with open(file_path, "rb") as f:
+                                    file_bytes = f.read()
                                 if file_path.suffix.lower() == ".pdf":
-                                    with open(file_path, "rb") as f:
-                                        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-                                    st.markdown(f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600"></iframe>', unsafe_allow_html=True)
+                                    # --- EDGE FIX: EMBED TAG + RESCUE BUTTON ---
+                                    base64_pdf = base64.b64encode(file_bytes).decode('utf-8')
+                                    pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf">'
+                                    st.markdown(pdf_display, unsafe_allow_html=True)
+                                    st.download_button("📂 View/Download Full PDF", file_bytes, file_name=file_path.name)
                                 else:
                                     st.info("Download to view Word file.")
-                                    with open(file_path, "rb") as f:
-                                        st.download_button(f"📥 Download Project", f, file_name=file_path.name)
+                                    st.download_button(f"📥 Download Project", file_bytes, file_name=file_path.name)
                             else:
                                 st.warning("File not found.")
-                    else:
-                        st.error("Header Error: Full Name not found.")
 
                     st.write("---")
                     st.download_button(f"📥 Export CSV", df.to_csv(index=False), file_name=f"{sel_tab}.csv")
@@ -258,9 +252,15 @@ def login_page():
     with col2:
         st.write("---")
         with st.expander("🛡️ Submission Guide"):
-            st.markdown("1. Login 2. Upload PDF/Docx 3. Click Final Submission.")
+            st.markdown("""
+            **How to Submit Your Project:**
+            1. **Enter Details**: Type your full name and admission number exactly as they appear on your ID.
+            2. **Select Class**: Choose your correct arm (e.g., JSS 1A).
+            3. **Upload File**: Select your PDF or Word document (Ensure it is not larger than 200MB).
+            4. **Final Submission**: Click the button once and wait for the 'Success' message.
+            """)
         name = st.text_input("Full Name", placeholder="Enter your full name")
-        adm = st.text_input("Admission Number", placeholder="e.g. class number")
+        adm = st.text_input("Admission Number", placeholder="e.g. RSC/2026/001")
         classes = ([f"JSS 1{c}" for c in "ABCDEFG"] + [f"JSS 2{c}" for c in "ABCDEF"] + [f"JSS 3{c}" for c in "ABCDEF"] + [f"SS 1{c}" for c in "ABCDEF"] + [f"SS 2{c}" for c in "ABCDEF"] + [f"SS 3{c}" for c in "ABC"])
         sel_class = st.selectbox("Class", options=classes, index=None, placeholder="Choose class...")
         if st.button("PROCEED TO PORTAL"):
