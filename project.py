@@ -260,7 +260,7 @@ def login_page():
             4. **Final Submission**: Click the button once and wait for the 'Success' message.
             """)
         name = st.text_input("Full Name", placeholder="Enter your full name")
-        adm = st.text_input("Admission Number", placeholder="e.g. RSC/2026/001")
+        adm = st.text_input("Admission Number", placeholder="e.g. Class Serial No")
         classes = ([f"JSS 1{c}" for c in "ABCDEFG"] + [f"JSS 2{c}" for c in "ABCDEF"] + [f"JSS 3{c}" for c in "ABCDEF"] + [f"SS 1{c}" for c in "ABCDEF"] + [f"SS 2{c}" for c in "ABCDEF"] + [f"SS 3{c}" for c in "ABC"])
         sel_class = st.selectbox("Class", options=classes, index=None, placeholder="Choose class...")
         if st.button("PROCEED TO PORTAL"):
@@ -295,4 +295,5 @@ else:
     upload_page()
 
 st.markdown("<br><hr><center>© 2026 Ruby Springfield College | Developed by <b>Adam Usman (Shutdown)</b></center>", unsafe_allow_html=True)
+
 
