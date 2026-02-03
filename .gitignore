@@ -1,16 +1,20 @@
 # --- SumiLogics Security Filter ---
 
-# 1. Hide the Student Data (Excel)
-Project_Results.xlsx
-*.xlsx
-*.csv
-
-# 2. Hide the Actual Project Files
-Results/
-
-# 3. Hide Python Junk Files
+# 1. Hide Python Junk Files (KEEP THIS)
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# 4. Hide Security Logs
+# 2. Hide Streamlit & Environment folders (KEEP THIS)
+.streamlit/
+venv/
+env/
+.env
+
+# 3. DO NOT HIDE PROJECT DATA (DELETE ANY LINES BLOCKING THESE)
+# Make sure "Results/" is NOT in this file.
+# Make sure "Project_Results.xlsx" is NOT in this file.
+
+# 4. Hide Security Logs (Optional - keep if you want logs private)
 security_audit.csv
