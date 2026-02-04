@@ -212,7 +212,6 @@ def admin_page():
                                 with open(file_path, "rb") as f:
                                     file_bytes = f.read()
                                 if file_path.suffix.lower() == ".pdf":
-                                    # --- EDGE FIX: EMBED TAG + RESCUE BUTTON ---
                                     base64_pdf = base64.b64encode(file_bytes).decode('utf-8')
                                     pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf">'
                                     st.markdown(pdf_display, unsafe_allow_html=True)
@@ -226,11 +225,10 @@ def admin_page():
                     st.write("---")
                     st.download_button(f"📥 Export CSV", df.to_csv(index=False), file_name=f"{sel_tab}.csv")
 
-   with tab2:
+    with tab2:
         if super_key == SUPER_ADMIN_KEY:
             st.subheader("🕵️ System Security Audit")
             
-            # --- THE MISSING BUTTONS START HERE ---
             st.markdown("### 🔄 Cloud Synchronization")
             col_a, col_b = st.columns(2)
             with col_a:
@@ -247,7 +245,6 @@ def admin_page():
                         st.success("Data backed up to GitHub!")
                     else:
                         st.error("Push failed.")
-            # --- THE MISSING BUTTONS END HERE ---
 
             st.write("---")
             if os.path.exists("security_audit.csv"):
@@ -339,4 +336,3 @@ else:
     upload_page()
 
 st.markdown("<br><hr><center>© 2026 Ruby Springfield College | Developed by <b>Adam Usman (Shutdown)</b></center>", unsafe_allow_html=True)
-
