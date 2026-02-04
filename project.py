@@ -16,11 +16,17 @@ def pull_from_github():
             return False
         
         github_token = st.secrets["GITHUB_TOKEN"]
-        # Repository setup
+        repo_url = f"https://{github_token}@github.com/kobicdroid/ProjectSubmit.git"
+        
         if os.path.exists(".git"):
             repo = git.Repo(os.getcwd())
-            origin = repo.remote(name='origin')
-            origin.pull()
+            # Shutdown Update: Ensure the remote is always pointing to the right place with the token
+            if 'origin' in [r.name for r in repo.remotes]:
+                repo.remote('origin').set_url(repo_url)
+            else:
+                repo.create_remote('origin', repo_url)
+            
+            repo.remote(name='origin').pull()
             return True
         return False
     except Exception as e:
@@ -43,10 +49,17 @@ def push_to_github():
         else:
             repo = git.Repo(os.getcwd())
 
+        # Ensure origin is correctly configured
+        if 'origin' not in [r.name for r in repo.remotes]:
+            repo.create_remote('origin', repo_url)
+        else:
+            repo.remote('origin').set_url(repo_url)
+
         repo.git.add(all=True)
-        repo.index.commit(f"New Submission Synced: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        origin = repo.remote(name='origin')
-        origin.push()
+        # Shutdown Check: Only commit if there are changes to avoid errors
+        if repo.is_dirty(untracked_files=True):
+            repo.index.commit(f"New Submission Synced: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            repo.remote(name='origin').push()
         return True
     except Exception as e:
         log_security_event("Sync Error", str(e))
@@ -235,6 +248,7 @@ def admin_page():
                 if st.button("📥 RECOVER DATA FROM GITHUB"):
                     if pull_from_github():
                         st.success("Oshey! Data recovered.")
+                        time.sleep(1)
                         st.rerun()
                     else:
                         st.error("Recovery failed. Check your GITHUB_TOKEN.")
@@ -336,4 +350,3 @@ else:
     upload_page()
 
 st.markdown("<br><hr><center>© 2026 Ruby Springfield College | Developed by <b>Adam Usman (Shutdown)</b></center>", unsafe_allow_html=True)
-
