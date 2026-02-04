@@ -8,6 +8,25 @@ from pathlib import Path
 from datetime import datetime
 import git  # --- ADVANCED UPDATE: Needs 'GitPython' in requirements.txt ---
 
+# --- NEW: RECOVERY LOGIC (PULL BEFORE START) ---
+def pull_from_github():
+    """Shutdown logic: Ensures local files match GitHub records on startup."""
+    try:
+        if "GITHUB_TOKEN" not in st.secrets:
+            return False
+        
+        github_token = st.secrets["GITHUB_TOKEN"]
+        # Repository setup
+        if os.path.exists(".git"):
+            repo = git.Repo(os.getcwd())
+            origin = repo.remote(name='origin')
+            origin.pull()
+            return True
+        return False
+    except Exception as e:
+        log_security_event("Pull Error", str(e))
+        return False
+
 # --- CORE LOGIC FUNCTIONS (STRICTLY PRESERVED) ---
 
 def push_to_github():
@@ -105,6 +124,11 @@ def save_submission_data(name, serial, s_class, score, uploaded_file):
     except PermissionError:
         st.error("❌ Access Denied: Please close 'Project_Results.xlsx' and try again!")
         return False
+
+# --- AUTO-SYNC ON STARTUP ---
+if 'startup_synced' not in st.session_state:
+    pull_from_github()
+    st.session_state['startup_synced'] = True
 
 # --- CONFIG & PASSWORDS ---
 st.set_page_config(page_title="RSC Portal | Shutdown", page_icon="🎓", layout="wide")
@@ -210,6 +234,14 @@ def admin_page():
                 st.dataframe(audit_df.sort_index(ascending=False), use_container_width=True)
             
             st.write("---")
+            # --- NEW RECOVERY BUTTON ---
+            if st.button("🔄 FORCE RECOVER FROM CLOUD"):
+                if pull_from_github():
+                    st.success("Recovery Successful!")
+                    st.rerun()
+                else:
+                    st.error("Recovery failed. Check Secrets.")
+
             st.subheader("📤 Bulk Student Import")
             import_classes = ([f"JSS 1{c}" for c in "ABCDEFG"] + [f"JSS 2{c}" for c in "ABCDEF"] + [f"JSS 3{c}" for c in "ABCDEF"] + [f"SS 1{c}" for c in "ABCDEF"] + [f"SS 2{c}" for c in "ABCDEF"] + [f"SS 3{c}" for c in "ABC"])
             target_class = st.selectbox("Select Target Class", options=import_classes)
@@ -295,5 +327,3 @@ else:
     upload_page()
 
 st.markdown("<br><hr><center>© 2026 Ruby Springfield College | Developed by <b>Adam Usman (Shutdown)</b></center>", unsafe_allow_html=True)
-
-
