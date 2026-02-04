@@ -336,3 +336,4 @@ else:
     upload_page()
 
 st.markdown("<br><hr><center>© 2026 Ruby Springfield College | Developed by <b>Adam Usman (Shutdown)</b></center>", unsafe_allow_html=True)
+
