@@ -226,22 +226,34 @@ def admin_page():
                     st.write("---")
                     st.download_button(f"📥 Export CSV", df.to_csv(index=False), file_name=f"{sel_tab}.csv")
 
-    with tab2:
+   with tab2:
         if super_key == SUPER_ADMIN_KEY:
             st.subheader("🕵️ System Security Audit")
+            
+            # --- THE MISSING BUTTONS START HERE ---
+            st.markdown("### 🔄 Cloud Synchronization")
+            col_a, col_b = st.columns(2)
+            with col_a:
+                if st.button("📥 RECOVER DATA FROM GITHUB"):
+                    if pull_from_github():
+                        st.success("Oshey! Data recovered.")
+                        st.rerun()
+                    else:
+                        st.error("Recovery failed. Check your GITHUB_TOKEN.")
+            
+            with col_b:
+                if st.button("📤 PUSH LOCAL DATA TO CLOUD"):
+                    if push_to_github():
+                        st.success("Data backed up to GitHub!")
+                    else:
+                        st.error("Push failed.")
+            # --- THE MISSING BUTTONS END HERE ---
+
+            st.write("---")
             if os.path.exists("security_audit.csv"):
                 audit_df = pd.read_csv("security_audit.csv")
                 st.dataframe(audit_df.sort_index(ascending=False), use_container_width=True)
             
-            st.write("---")
-            # --- NEW RECOVERY BUTTON ---
-            if st.button("🔄 FORCE RECOVER FROM CLOUD"):
-                if pull_from_github():
-                    st.success("Recovery Successful!")
-                    st.rerun()
-                else:
-                    st.error("Recovery failed. Check Secrets.")
-
             st.subheader("📤 Bulk Student Import")
             import_classes = ([f"JSS 1{c}" for c in "ABCDEFG"] + [f"JSS 2{c}" for c in "ABCDEF"] + [f"JSS 3{c}" for c in "ABCDEF"] + [f"SS 1{c}" for c in "ABCDEF"] + [f"SS 2{c}" for c in "ABCDEF"] + [f"SS 3{c}" for c in "ABC"])
             target_class = st.selectbox("Select Target Class", options=import_classes)
@@ -327,3 +339,4 @@ else:
     upload_page()
 
 st.markdown("<br><hr><center>© 2026 Ruby Springfield College | Developed by <b>Adam Usman (Shutdown)</b></center>", unsafe_allow_html=True)
+
