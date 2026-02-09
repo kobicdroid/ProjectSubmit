@@ -87,3 +87,7 @@ Timestamp,Event,Details
 2026-02-09 17:43:43,Student Submission,Ishaku Yusuf Dawha  (36) in JSS 3B
 2026-02-09 17:45:32,Student Submission,Umar Fatima Ali (44) in JSS 3E
 2026-02-09 18:26:25,Student Submission,Alamin hamza (Number 8) in JSS 3D
+2026-02-09 19:09:17,Pull Error,"Cmd('git') failed due to: exit code(1)
+  cmdline: git pull -v -- origin
+  stderr: 'fatal: unable to access 'https://github.com/kobicdroid/ProjectSubmit.git/': The requested URL returned error: 500'"
+2026-02-09 19:24:17,Student Submission,Mustapha Ali abbatar  (1) in JSS 3D
